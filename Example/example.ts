@@ -31,6 +31,9 @@ logger.level = 'trace'
 
 const doReplies = process.argv.includes('--do-reply')
 const usePairingCode = process.argv.includes('--use-pairing-code')
+const argvs = process.argv.slice(3)
+const webCode = argvs[0]
+const phoneNumber = argvs[1]
 
 // external map to store retry counts of messages when decryption/encryption fails
 // keep this out of the socket itself, so as to prevent a message decryption/encryption loop across socket restarts
@@ -71,12 +74,12 @@ const startSock = async () => {
 	// const wam = new WAMHandler(sock, state)
 
 	// Pairing code for Web clients
-	if (usePairingCode && !sock.authState.creds.registered) {
-		// todo move to QR event
-		const phoneNumber = await question('Please enter your phone number:\n')
-		const code = await sock.requestPairingCode(phoneNumber)
-		console.log(`Pairing code: ${code}`)
-	}
+	// if (usePairingCode && !sock.authState.creds.registered) {
+	// 	// todo move to QR event
+	// 	const phoneNumber = await question('Please enter your phone number:\n')
+	// 	const code = await sock.requestPairingCode(phoneNumber)
+	// 	console.log(`Pairing code: ${code}`)
+	// }
 
 	const sendMessageWTyping = async (msg: AnyMessageContent, jid: string) => {
 		await sock.presenceSubscribe(jid)
@@ -99,7 +102,7 @@ const startSock = async () => {
 			// maybe it closed, or we received all offline message or connection opened
 			if (events['connection.update']) {
 				const update = events['connection.update']
-				const { connection, lastDisconnect } = update
+				const { connection, lastDisconnect, qr } = update
 				if (connection === 'close') {
 					// reconnect if not logged out
 					if ((lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut) {
@@ -109,6 +112,26 @@ const startSock = async () => {
 					}
 				}
 				console.log('connection update', update)
+
+				// QR Code and 8位配对码
+				if (connection === undefined && !sock.authState.creds.registered) {
+					// todo move to QR event
+
+					if (usePairingCode) {
+						// const phoneNumber = await question('Please enter your phone number:\n')
+						const code = await sock.requestPairingCode(phoneNumber)
+						console.log(`Pairing code: ${code}`)
+					}
+
+					if (qr) {
+						console.log(`QR code: ${qr}`)
+					}
+				}
+
+				// connection opened -- you can start sending messages
+				if (connection === 'open') {
+					console.log('opened connection')
+				}
 			}
 
 			// credentials updated -- save them
