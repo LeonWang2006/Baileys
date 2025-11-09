@@ -73,8 +73,6 @@ const startSock = async () => {
 	})
 
 
-	// const wam = new WAMHandler(sock, state)
-
 	// Pairing code for Web clients
 	// if (usePairingCode && !sock.authState.creds.registered) {
 	// 	// todo move to QR event
