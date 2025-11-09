@@ -23,6 +23,9 @@ importers:
       config:
         specifier: ^4.1.1
         version: 4.1.1
+      https-proxy-agent:
+        specifier: ^7.0.6
+        version: 7.0.6
       libsignal:
         specifier: git+https://github.com/whiskeysockets/libsignal-node
         version: '@whiskeysockets/libsignal-node@https://codeload.github.com/whiskeysockets/libsignal-node/tar.gz/e81ecfc32eb74951d789ab37f7e341ab66d5fff1'

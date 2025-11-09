@@ -1,6 +1,6 @@
 {
   "proxy": {
-    "url": "socks5://127.0.0.1:7897"
+    "url": "http://127.0.0.1:7897"
   },
   "logging": {
     "level": "trace",

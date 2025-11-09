@@ -7,11 +7,13 @@ import open from 'open'
 import fs from 'fs'
 import P from 'pino'
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent'; // 导入 HTTP 代理库
 import config from 'config';
 // import { WAMHandler } from './
 
 const proxyUrl = config.get<string>('proxy.url');
-const proxyAgent = new SocksProxyAgent(proxyUrl);
+// 配置 Clash HTTP 代理（和之前 curl 生效的地址一致）
+const proxyAgent = new HttpsProxyAgent('http://127.0.0.1:7897');
 const logger = P({
 	level: config.get<string>('logging.level'),
 	transport: {

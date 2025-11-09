@@ -32,7 +32,7 @@ const getTmpFilesDirectory = () => tmpdir()
 
 const getImageProcessingLibrary = async () => {
 	//@ts-ignore
-	const [jimp, sharp] = await Promise.all([import('jimp').catch(() => {}), import('sharp').catch(() => {})])
+	const [jimp, sharp] = await Promise.all([import('jimp').catch(() => { }), import('sharp').catch(() => { })])
 
 	if (sharp) {
 		return { sharp }
@@ -238,7 +238,7 @@ export async function getAudioDuration(buffer: Buffer | string | Readable) {
 }
 
 /**
-  referenced from and modifying https://github.com/wppconnect-team/wa-js/blob/main/src/chat/functions/prepareAudioWaveform.ts
+	referenced from and modifying https://github.com/wppconnect-team/wa-js/blob/main/src/chat/functions/prepareAudioWaveform.ts
  */
 export async function getAudioWaveform(buffer: Buffer | string | Readable, logger?: ILogger) {
 	try {
@@ -256,18 +256,26 @@ export async function getAudioWaveform(buffer: Buffer | string | Readable, logge
 
 		const audioBuffer = await decoder(audioData)
 
-		const rawData = audioBuffer.getChannelData(0) // We only need to work with one channel of data
+		// getChannelData may return undefined in some decoders; ensure we have a Float32Array
+		const rawData = audioBuffer.getChannelData(0) || new Float32Array(0) // We only need to work with one channel of data
 		const samples = 64 // Number of samples we want to have in our final data set
 		const blockSize = Math.floor(rawData.length / samples) // the number of samples in each subdivision
 		const filteredData: number[] = []
 		for (let i = 0; i < samples; i++) {
 			const blockStart = blockSize * i // the location of the first sample in the block
 			let sum = 0
+			let actualSamples = 0
 			for (let j = 0; j < blockSize; j++) {
-				sum = sum + Math.abs(rawData[blockStart + j]) // find the sum of all the samples in the block
+				const sampleIndex = blockStart + j
+				if (sampleIndex < rawData.length) {
+					// rawData[sampleIndex] may be undefined at runtime if out-of-bounds; default to 0 for safety
+					const sampleValue = rawData[sampleIndex] ?? 0
+					sum = sum + Math.abs(sampleValue)
+					actualSamples++
+				}
 			}
 
-			filteredData.push(sum / blockSize) // divide the sum by the block size to get the average
+			filteredData.push(actualSamples > 0 ? sum / actualSamples : 0) // divide the sum by the actual number of samples to get the average
 		}
 
 		// This guarantees that the largest data point will be set to 1, and the rest of the data will scale proportionally.
@@ -284,7 +292,7 @@ export async function getAudioWaveform(buffer: Buffer | string | Readable, logge
 }
 
 export const toReadable = (buffer: Buffer) => {
-	const readable = new Readable({ read: () => {} })
+	const readable = new Readable({ read: () => { } })
 	readable.push(buffer)
 	readable.push(null)
 	return readable
