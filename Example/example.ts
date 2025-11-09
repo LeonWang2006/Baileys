@@ -7,30 +7,32 @@ import open from 'open'
 import fs from 'fs'
 import P from 'pino'
 import { SocksProxyAgent } from 'socks-proxy-agent';
-// import { WAMHandler } from './wam'
+import config from 'config';
+// import { WAMHandler } from './
 
-const proxyAgent = new SocksProxyAgent('socks5://127.0.0.1:7897');
+const proxyUrl = config.get<string>('proxy.url');
+const proxyAgent = new SocksProxyAgent(proxyUrl);
 const logger = P({
-	level: "trace",
+	level: config.get<string>('logging.level'),
 	transport: {
 		targets: [
 			{
 				target: "pino-pretty", // pretty-print for console
 				options: { colorize: true },
-				level: "trace",
+				level: config.get<string>('logging.level'),
 			},
 			{
 				target: "pino/file", // raw file output
-				options: { destination: './wa-logs.txt' },
-				level: "trace",
+				options: { destination: config.get<string>('logging.file') },
+				level: config.get<string>('logging.level'),
 			},
 		],
 	},
 })
-logger.level = 'trace'
+logger.level = config.get<string>('logging.level');
 
-const doReplies = process.argv.includes('--do-reply')
-const usePairingCode = process.argv.includes('--use-pairing-code')
+const doReplies = process.argv.includes('--do-reply') || config.get<boolean>('features.doReply');
+const usePairingCode = process.argv.includes('--use-pairing-code') || config.get<boolean>('features.usePairingCode');
 const argvs = process.argv.slice(3)
 const webCode = argvs[0]
 const phoneNumber = argvs[1]
