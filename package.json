@@ -52,6 +52,7 @@
     "p-queue": "^9.0.0",
     "pino": "^9.6",
     "protobufjs": "^7.2.4",
+    "redis": "^5.9.0",
     "ws": "^8.13.0"
   },
   "devDependencies": {

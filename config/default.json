@@ -9,5 +9,13 @@
   "features": {
     "doReply": true,
     "usePairingCode": true
+  },
+  "redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "db": 0,
+    "password": "reids2025",
+    "connectTimeout": 10000,
+    "maxRetries": 3
   }
 }

@@ -5,6 +5,7 @@ import makeWASocket, { AnyMessageContent, BinaryInfo, CacheStore, delay, Disconn
 //import MAIN_LOGGER from '../src/Utils/logger'
 import open from 'open'
 import fs from 'fs'
+import { createRedisClient, type RedisConfig } from './redis-client.js'
 import P from 'pino'
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent'; // 导入 HTTP 代理库
@@ -13,14 +14,14 @@ import config from 'config';
 
 const proxyUrl = config.get<string>('proxy.url');
 // 配置 Clash HTTP 代理（和之前 curl 生效的地址一致）
-const proxyAgent = new HttpsProxyAgent('http://127.0.0.1:7897');
+const proxyAgent = new HttpsProxyAgent(proxyUrl);
 const logger = P({
 	level: config.get<string>('logging.level'),
 	transport: {
 		targets: [
 			{
 				target: "pino-pretty", // pretty-print for console
-				options: { colorize: true },
+				options: { colorize: true, translateTime: 'SYS:standard', singleLine: true },
 				level: config.get<string>('logging.level'),
 			},
 			{
@@ -48,6 +49,19 @@ const onDemandMap = new Map<string, string>()
 // Read line interface
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 const question = (text: string) => new Promise<string>((resolve) => rl.question(text, resolve))
+
+// Redis 连接配置
+const redisConfig: RedisConfig = {
+	host: config.get<string>('redis.host'),
+	port: config.get<number>('redis.port'),
+	// password: config.get<string>('redis.password'), // 如果需要认证
+	db: config.get<number>('redis.db'),
+	connectTimeout: config.get<number>('redis.connectTimeout'),
+	maxRetries: config.get<number>('redis.maxRetries')
+}
+
+// 创建 Redis 客户端
+const redisClient = createRedisClient(redisConfig, logger)
 
 // start a connection
 const startSock = async () => {
@@ -122,6 +136,8 @@ const startSock = async () => {
 					if (usePairingCode) {
 						// const phoneNumber = await question('Please enter your phone number:\n')
 						const code = await sock.requestPairingCode(phoneNumber)
+						// 缓存配对码到 Redis
+						await redisClient.set(`pairing_code:${phoneNumber}`, code, 60 * 5) // 5 分钟过期
 						console.log(`Pairing code: ${code}`)
 					}
 
